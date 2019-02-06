@@ -8,7 +8,7 @@
 /////////////
 // GLOBALS //
 /////////////
-const bool FULL_SCREEN = true;
+const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
 const float SCREEN_DEPTH = 1000.0f;
 const float SCREEN_NEAR = 0.1f;
@@ -30,13 +30,26 @@ const float SCREEN_NEAR = 0.1f;
 #include "terrainshaderclass.h"
 #include "lightclass.h"
 
+//GUI INCLUDES
+
+#include <imgui.h>
+#include <imgui_impl_dx11.h>
+#include <imconfig.h>
+#include <imgui_impl_win32.h>
+#include <imgui_internal.h>
+#include <stb_rect_pack.h>
+#include <stb_textedit.h>
+#include <stb_truetype.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ApplicationClass
 ////////////////////////////////////////////////////////////////////////////////
+
 class ApplicationClass
 {
 public:
+
 	ApplicationClass();
 	ApplicationClass(const ApplicationClass&);
 	~ApplicationClass();
@@ -45,11 +58,16 @@ public:
 	void Shutdown();
 	bool Frame();
 
+	void gui();
+	int faultValue = 5;
+
 private:
+
 	bool HandleInput(float);
 	bool RenderGraphics();
 
 private:
+
 	InputClass* m_Input;
 	D3DClass* m_Direct3D;
 	CameraClass* m_Camera;

@@ -55,12 +55,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\scott\Google Drive\Uni\Y3-S2\Procedural Methods\Labs\Engine\Engine\include\imGUI;C:\Users\scott\Google Drive\Uni\Y3-S2\Procedural Methods\Labs\Engine\Engine\include\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\scott\Google Drive\Uni\Y3-S2\Procedural Methods\Labs\Engine\Engine\lib\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -88,6 +89,11 @@
     <ClCompile Include="fontclass.cpp" />
     <ClCompile Include="fontshaderclass.cpp" />
     <ClCompile Include="fpsclass.cpp" />
+    <ClCompile Include="include\imGUI\imgui.cpp" />
+    <ClCompile Include="include\imGUI\imgui_demo.cpp" />
+    <ClCompile Include="include\imGUI\imgui_draw.cpp" />
+    <ClCompile Include="include\imGUI\imgui_impl_dx11.cpp" />
+    <ClCompile Include="include\imGUI\imgui_impl_win32.cpp" />
     <ClCompile Include="inputclass.cpp" />
     <ClCompile Include="lightclass.cpp" />
     <ClCompile Include="main.cpp" />
@@ -107,6 +113,14 @@
     <ClInclude Include="fontclass.h" />
     <ClInclude Include="fontshaderclass.h" />
     <ClInclude Include="fpsclass.h" />
+    <ClInclude Include="include\imGUI\imconfig.h" />
+    <ClInclude Include="include\imGUI\imgui.h" />
+    <ClInclude Include="include\imGUI\imgui_impl_dx11.h" />
+    <ClInclude Include="include\imGUI\imgui_impl_win32.h" />
+    <ClInclude Include="include\imGUI\imgui_internal.h" />
+    <ClInclude Include="include\imGUI\stb_rect_pack.h" />
+    <ClInclude Include="include\imGUI\stb_textedit.h" />
+    <ClInclude Include="include\imGUI\stb_truetype.h" />
     <ClInclude Include="inputclass.h" />
     <ClInclude Include="lightclass.h" />
     <ClInclude Include="positionclass.h" />

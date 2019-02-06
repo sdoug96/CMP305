@@ -22,17 +22,17 @@ private:
 	struct VertexType
 	{
 		D3DXVECTOR3 position;
-	    D3DXVECTOR3 normal;
+		D3DXVECTOR3 normal;
 	};
 
-	struct HeightMapType 
-	{ 
+	struct HeightMapType
+	{
 		float x, y, z;
 		float nx, ny, nz;
 	};
 
-	struct VectorType 
-	{ 
+	struct VectorType
+	{
 		float x, y, z;
 	};
 
@@ -47,6 +47,7 @@ public:
 	void Render(ID3D11DeviceContext*);
 	bool GenerateHeightMap(ID3D11Device* device, bool keydown);
 	bool SmoothTerrain(ID3D11Device* device, bool keydown);
+	void Faulting(ID3D11Device* device, bool keydown, int faultValue);
 	int  GetIndexCount();
 
 private:
@@ -58,8 +59,9 @@ private:
 	bool InitializeBuffers(ID3D11Device*);
 	void ShutdownBuffers();
 	void RenderBuffers(ID3D11DeviceContext*);
-	
+
 private:
+	int GetIndex(int x, int y);
 	bool m_terrainGeneratedToggle;
 	int m_terrainWidth, m_terrainHeight;
 	int m_vertexCount, m_indexCount;

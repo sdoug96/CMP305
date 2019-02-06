@@ -390,6 +390,9 @@ bool ApplicationClass::HandleInput(float frameTime)
 	keyDown = m_Input->IsMPressed();
 	m_Terrain->SmoothTerrain(m_Direct3D->GetDevice(), keyDown);
 
+	keyDown = m_Input->IsFPressed();
+	m_Terrain->Faulting(m_Direct3D->GetDevice(), keyDown, faultValue);
+
 	keyDown = m_Input->IsLeftPressed();
 	m_Position->TurnLeft(keyDown);
 
@@ -488,8 +491,19 @@ bool ApplicationClass::RenderGraphics()
 	// Turn the Z buffer back on now that all 2D rendering has completed.
 	m_Direct3D->TurnZBufferOn();
 
+	//gui();
+
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();
 
 	return true;
+}
+
+void ApplicationClass::gui()
+{
+	ImGui::SliderInt("Fault Value: ", &faultValue, 1, 5, 0);
+
+	// Render UI
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

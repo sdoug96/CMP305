@@ -263,6 +263,17 @@ bool InputClass::IsMPressed()
 	return false;
 }
 
+bool InputClass::IsFPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the key is currently being pressed.
+	if (m_keyboardState[DIK_F] & 0x80)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool InputClass::IsLeftPressed()
 {
 	// Do a bitwise and on the keyboard state to check if the key is currently being pressed.

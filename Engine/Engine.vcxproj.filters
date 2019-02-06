@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\ImGUI">
+      <UniqueIdentifier>{807d3fdf-6171-43f4-ae30-4874765cd478}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ImGUI">
+      <UniqueIdentifier>{a1e44de7-c34f-427a-b3ab-662864705533}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="applicationclass.cpp">
@@ -66,6 +72,21 @@
     <ClCompile Include="timerclass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="include\imGUI\imgui_demo.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="include\imGUI\imgui_draw.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="include\imGUI\imgui_impl_dx11.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="include\imGUI\imgui_impl_win32.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="include\imGUI\imgui.cpp">
+      <Filter>Source Files\ImGUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="applicationclass.h">
@@ -115,6 +136,30 @@
     </ClInclude>
     <ClInclude Include="timerclass.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\imgui.h">
+      <Filter>Header Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\imgui_impl_dx11.h">
+      <Filter>Header Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\imgui_impl_win32.h">
+      <Filter>Header Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\imgui_internal.h">
+      <Filter>Header Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\imconfig.h">
+      <Filter>Header Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\stb_rect_pack.h">
+      <Filter>Header Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\stb_textedit.h">
+      <Filter>Header Files\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imGUI\stb_truetype.h">
+      <Filter>Header Files\ImGUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

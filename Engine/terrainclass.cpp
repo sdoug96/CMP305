@@ -66,20 +66,6 @@ bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int
 		}
 	}
 
-	// Initialise the data in the smooth map (flat).
-	for (int j = 0; j < m_terrainHeight; j++)
-	{
-		for (int i = 0; i < m_terrainWidth; i++)
-		{
-			index = (m_terrainHeight * j) + i;
-
-			m_smoothMap[index].x = (float)i;
-			m_smoothMap[index].y = (float)height;
-			m_smoothMap[index].z = (float)j;
-
-		}
-	}
-
 	//even though we are generating a flat terrain, we still need to normalise it. 
 	// Calculate the normals for the terrain data.
 	result = CalculateNormals();
@@ -205,66 +191,78 @@ bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
 	return true;
 }
 
+int TerrainClass::GetIndex(int x, int y)
+{
+	return (m_terrainHeight * y) + x;
+}
+
 bool TerrainClass::SmoothTerrain(ID3D11Device* device, bool keydown)
 {
+	int index;
+
 	if (keydown)
 	{
 		for (int x = 0; x < m_terrainWidth; x++)
 		{
 			for (int y = 0; y < m_terrainHeight; y++)
 			{
+				index = (m_terrainHeight * y) + x;
 				float adjacentSections = 0.0f;
 				float sectionsTotal = 0.0f;
 
 				if ((x - 1) > 0) // Check to left
 				{
-					sectionsTotal += m_heightMap[x - 1, y].y;
+					sectionsTotal += m_heightMap[GetIndex(x - 1, y)].y;
 					adjacentSections++;
 
 					if ((y - 1) > 0) // Check up and to the left
 					{
-						sectionsTotal += m_heightMap[x - 1, y - 1].y;
+						sectionsTotal += m_heightMap[GetIndex(x - 1, y - 1)].y;
 						adjacentSections++;
 					}
 
 					if ((y + 1) < m_terrainHeight) // Check down and to the left
 					{
-						sectionsTotal += m_heightMap[x - 1, y + 1].y;
+						sectionsTotal += m_heightMap[GetIndex(x - 1, y + 1)].y;
 						adjacentSections++;
 					}
 				}
 
 				if ((x + 1) < m_terrainWidth) // Check to right
 				{
-					sectionsTotal += m_heightMap[x + 1, y].y;
+					sectionsTotal += m_heightMap[GetIndex(x + 1, y)].y;
 					adjacentSections++;
 
 					if ((y - 1) > 0) // Check up and to the right
 					{
-						sectionsTotal += m_heightMap[x + 1, y - 1].y;
+						sectionsTotal += m_heightMap[GetIndex(x + 1, y - 1)].y;
 						adjacentSections++;
 					}
 
 					if ((y + 1) < m_terrainHeight) // Check down and to the right
 					{
-						sectionsTotal += m_heightMap[x + 1, y + 1].y;
+						sectionsTotal += m_heightMap[GetIndex(x + 1, y + 1)].y;
 						adjacentSections++;
 					}
 				}
 
 				if ((y - 1) > 0) // Check above
 				{
-					sectionsTotal += m_heightMap[x, y - 1].y;
+					sectionsTotal += m_heightMap[GetIndex(x, y - 1)].y;
 					adjacentSections++;
 				}
 
 				if ((y + 1) < m_terrainHeight) // Check below
 				{
-					sectionsTotal += m_heightMap[x, y + 1].y;
+					sectionsTotal += m_heightMap[GetIndex(x, y + 1)].y;
 					adjacentSections++;
 				}
 
-				m_smoothMap[x, y].y = (m_heightMap[x, y].y + (sectionsTotal / adjacentSections)) * 0.5f;
+				float average = (m_heightMap[GetIndex(x, y)].y + (sectionsTotal / adjacentSections)) * 0.5f;
+
+				m_smoothMap[GetIndex(x, y)].x = m_heightMap[GetIndex(x, y)].x;
+				m_smoothMap[GetIndex(x, y)].y = average;
+				m_smoothMap[GetIndex(x, y)].z = m_heightMap[GetIndex(x, y)].z;
 			}
 		}
 
@@ -273,11 +271,61 @@ bool TerrainClass::SmoothTerrain(ID3D11Device* device, bool keydown)
 		{
 			for (int y = 0; y < m_terrainHeight; y++)
 			{
-				m_heightMap[x, y] = m_smoothMap[x, y];
+				m_heightMap[GetIndex(x, y)] = m_smoothMap[GetIndex(x, y)];
 			}
 		}
 	}
+
+
+	bool result = CalculateNormals();
+	if (!result)
+	{
+		return false;
+	}
+
+	// Initialize the vertex and index buffer that hold the geometry for the terrain.
+	result = InitializeBuffers(device);
+	if (!result)
+	{
+		return false;
+	}
+
 	return true;
+}
+
+void TerrainClass::Faulting(ID3D11Device* device, bool keydown, int faultValue)
+{
+	int index;
+
+	D3DXVECTOR3 lineA, lineB, crossResult;
+
+	float randPointX = rand() % 100, randPointY = rand() % 100, ranGradX = rand() % 2 - 0.5, randGradY = rand() % 2 - 0.5;
+
+	lineA = D3DXVECTOR3(ranGradX, randGradY, 0.0);
+
+	if (keydown)
+	{
+		for (int x = 0; x < m_terrainWidth; x++)
+		{
+			for (int y = 0; y < m_terrainHeight; y++)
+			{
+				index = (m_terrainHeight * y) + x;
+
+				lineB = D3DXVECTOR3(x - randPointX, y - randPointY, 0.0);
+
+				D3DXVec3Cross(&crossResult, &lineA, &lineB);
+
+				if (crossResult.z > 0)
+				{
+					m_heightMap[index].y += faultValue;
+				}
+				else
+				{
+					m_heightMap[index].y -= faultValue;
+				}
+			}
+		}
+	}
 }
 
 
