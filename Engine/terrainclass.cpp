@@ -15,6 +15,9 @@ TerrainClass::TerrainClass()
 	m_heightMap = 0;
 	m_smoothMap = 0;
 	m_terrainGeneratedToggle = false;
+
+	for (int i = 0; i < 256; i++) p[256 + i] = p[i] = permutation[i];
+
 }
 
 
@@ -152,6 +155,7 @@ bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
 	{
 		int index;
 		float height = 0.0;
+		float frequency = 0.1234151534;
 
 		//loop through the terrain and set the heights how we want. This is where we generate the terrain
 		//in this case I will run a sin-wave through the terrain in one axis.
@@ -164,8 +168,13 @@ bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
 
 				m_heightMap[index].x = (float)i;
 				//magic numbers ahoy, sine wave in both directions applied to plane
-				m_heightMap[index].y = (float)(((sin((float)i / (m_terrainWidth / 12))*3.0) + rand() % 2) + ((sin((float)j / (m_terrainWidth / 12))*3.0)) + rand() % 2);
+				m_heightMap[index].y = (float)(PerlinNoise(i * frequency, 0.0, j * frequency));
 				m_heightMap[index].z = (float)j;
+
+				//m_heightMap[index].x = (float)i;
+				////magic numbers ahoy, sine wave in both directions applied to plane
+				//m_heightMap[index].y = (float)(((sin((float)i / (m_terrainWidth / 12))*3.0) + rand() % 2) + ((sin((float)j / (m_terrainWidth / 12))*3.0)) + rand() % 2);
+				//m_heightMap[index].z = (float)j;
 			}
 		}
 
@@ -326,6 +335,49 @@ void TerrainClass::Faulting(ID3D11Device* device, bool keydown, int faultValue)
 			}
 		}
 	}
+}
+
+float TerrainClass::Fade(float t)
+{
+	return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+float TerrainClass::Lerp(float t, float a, float b)
+{
+	return a + t * (b - a);
+}
+
+float TerrainClass::Grad(int hash, float x, float y, float z)
+{
+	int h = hash & 15;
+
+	float u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
+
+	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+}
+
+float TerrainClass::PerlinNoise(float x, float y, float z)
+{
+	int X = floor(x), Y = floor(y), Z = floor(z);
+
+	x -= floor(x);
+	y -= floor(y);
+	z -= floor(z);
+
+	float u = Fade(x), v = Fade(y), w = Fade(z);
+#
+	int A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z,
+		B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
+
+	return Lerp(w, Lerp(v, Lerp(u, Grad(p[AA], x, y, z),  // AND ADD
+		Grad(p[BA], x - 1, y, z)), // BLENDED
+		Lerp(u, Grad(p[AB], x, y - 1, z),  // RESULTS
+			Grad(p[BB], x - 1, y - 1, z))),// FROM  8
+		Lerp(v, Lerp(u, Grad(p[AA + 1], x, y, z - 1),  // CORNERS
+			Grad(p[BA + 1], x - 1, y, z - 1)), // OF CUBE
+			Lerp(u, Grad(p[AB + 1], x, y - 1, z - 1),
+				Grad(p[BB + 1], x - 1, y - 1, z - 1))));
+
 }
 
 

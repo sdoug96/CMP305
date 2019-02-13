@@ -485,13 +485,13 @@ bool ApplicationClass::RenderGraphics()
 		return false;
 	}
 
+	//gui();
+
 	// Turn off alpha blending after rendering the text.
 	m_Direct3D->TurnOffAlphaBlending();
 
 	// Turn the Z buffer back on now that all 2D rendering has completed.
 	m_Direct3D->TurnZBufferOn();
-
-	//gui();
 
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();
