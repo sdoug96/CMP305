@@ -12,7 +12,7 @@ public:
 	LSystemStringGenerator();
 	~LSystemStringGenerator();
 
-	string generateString(string initialString);
+	string generateString(string initialString, int passes);
 
 };
 

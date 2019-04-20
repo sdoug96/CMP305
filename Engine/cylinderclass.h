@@ -27,7 +27,7 @@ private:
 	};
 
 public:
-	cylinderclass();
+	cylinderclass(float height);
 	cylinderclass(const cylinderclass&);
 	~cylinderclass();
 
@@ -37,7 +37,9 @@ public:
 
 	int GetIndexCount();
 	D3DXMATRIX transform;
-
+	float cylinderHeight; //Height of cylinder
+	D3DXVECTOR4 cylinderColour = D3DXVECTOR4(0.545f, 0.27f, 0.075f, 1.0f); //Colour of cylinder
+	int radiusDivider = 10; //Used to scale radius down
 
 private:
 	bool InitializeBuffers(ID3D11Device*);

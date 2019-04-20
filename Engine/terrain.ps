@@ -61,11 +61,13 @@ float4 TerrainPixelShader(PixelInputType input) : SV_TARGET
 	    blend = slope / 0.2f;
 		texColour = lerp(grassColour, slopeColour, blend);
 	}
-	if((slope < 0.7) && (slope >= 0.2f))
+
+	if ((slope < 0.7) && (slope >= 0.2f))
 	{
 	    blend = (slope - 0.2f) * (1.0f / (0.7f - 0.2f));
 		texColour = lerp(slopeColour, rockColour, blend);
 	}
+
 	if (slope >= 0.7f)
 	{
 	    texColour = rockColour;

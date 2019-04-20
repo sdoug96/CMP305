@@ -19,6 +19,7 @@ ApplicationClass::ApplicationClass()
 	m_TerrainShader = 0;
 	m_Light = 0;
 	m_cylinder = 0;
+	m_leaf = 0;
 	m_ColorShader = 0;
 }
 
@@ -93,7 +94,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	m_Camera->SetPosition(cameraX, cameraY, cameraZ);
 
 	// Create the model object.
-	m_cylinder = new cylinderclass;
+	m_cylinder = new cylinderclass(0);
 	if (!m_cylinder)
 	{
 		return false;
@@ -103,7 +104,22 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	result = m_cylinder->Initialize(m_Direct3D->GetDevice());
 	if (!result)
 	{
-		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize the cylinder model object.", L"Error", MB_OK);
+		return false;
+	}
+
+	// Create the model object.
+	m_leaf = new leafclass();
+	if (!m_leaf)
+	{
+		return false;
+	}
+
+	// Initialize the model object.
+	result = m_cylinder->Initialize(m_Direct3D->GetDevice());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the leaf model object.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -253,7 +269,6 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(1.0f, -1.0f, 0.0f);
 
-
 	//Initialize GUI
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -261,8 +276,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplDX11_Init(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext());
 
-
-	LSystemString = m_LSystem->generateString("A");
+	LSystemString = m_LSystem->generateString("FA", 5);
 	ParseLSystem();
 
 	return true;
@@ -368,6 +382,14 @@ void ApplicationClass::Shutdown()
 		m_cylinder->Shutdown();
 		delete m_cylinder;
 		m_cylinder = 0;
+	}
+
+	// Release the model object.
+	if (m_leaf)
+	{
+		m_leaf->Shutdown();
+		delete m_leaf;
+		m_leaf = 0;
 	}
 
 	// Release the color shader object.
@@ -539,12 +561,28 @@ bool ApplicationClass::RenderGraphics()
 		return false;
 	}
 
-	for (int i = 0; i < m_Cylinders.size(); i++) {
+	//Render cylinders
+	for (int i = 0; i < m_Cylinders.size(); i++) 
+	{
 		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
 		m_Cylinders[i]->Render(m_Direct3D->GetDeviceContext());
 
 		// Render the model using the color shader.
 		result = m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Cylinders[i]->GetIndexCount(), m_Cylinders[i]->transform, viewMatrix, projectionMatrix);
+		if (!result)
+		{
+			return false;
+		}
+	}
+
+	//Render leaves
+	for (int i = 0; i < m_Leaves.size(); i++)
+	{
+		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+		m_Leaves[i]->Render(m_Direct3D->GetDeviceContext());
+
+		// Render the model using the color shader.
+		result = m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Leaves[i]->GetIndexCount(), m_Leaves[i]->transform, viewMatrix, projectionMatrix);
 		if (!result)
 		{
 			return false;
@@ -583,70 +621,104 @@ void ApplicationClass::ParseLSystem()
 {
 	D3DXMATRIX transformMatrix;
 	m_Direct3D->GetWorldMatrix(transformMatrix);
+	D3DXMatrixTranslation(&transformMatrix, 50.f, 0.f, 75.f);
 
 	D3DXMATRIX move;
 	D3DXMATRIX rotation;
 
-	D3DXMATRIX l, r;
+	D3DXMatrixTranslation(&move, 0.f, 0.f, 0.f);
+	D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
+
+	D3DXMATRIX l, r, f, b;
 	D3DXMatrixRotationYawPitchRoll(&l, 0.f, D3DXToRadian(45.f), 0.f);
 	D3DXMatrixRotationYawPitchRoll(&r, 0.f, D3DXToRadian(-45.f), 0.f);
+	D3DXMatrixRotationYawPitchRoll(&f, D3DXToRadian(45.f), 0.f, 0.f);
+	D3DXMatrixRotationYawPitchRoll(&b, D3DXToRadian(-45.f), 0.f, 0.f);
 
-
-	D3DXMatrixTranslation(&move, 0.f, 0.f, 0.f);
-
-	//We're only ever moving up 5 on the (local) y
-	D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
-	//LSystemString = ;
 	std::stack<D3DXMATRIX> matrixStack;
-	for (int i = 0; i < LSystemString.length(); i++) {
+
+	// [ = store the state
+    // ] = revert the state
+    // F = create tree segment
+    // A = Terminator (create a leaf / do nothing)
+    // & = Pitch out by X degrees
+    // / & \\ = rotate around the Y axis by -X or +X degrees
+
+	for (int i = 0; i < LSystemString.length(); i++) 
+	{
+		int randNum = (rand() % 2) + 1;
 
 		switch (LSystemString[i])
 		{
-		case 'A':
-			//Spawn a cylinder and move position
-			transformMatrix = (rotation * move)*transformMatrix;
+		case 'F':
+
+			//Create a cylinder and move position
+			transformMatrix = (rotation * move) * transformMatrix;
 
 			//Enable passing through of height/radius
-			m_Cylinders.push_back(new cylinderclass());
+			m_Cylinders.push_back(new cylinderclass(0));
 			m_Cylinders.back()->Initialize(m_Direct3D->GetDevice());
-
 
 			m_Cylinders.back()->transform = transformMatrix;
 
 			//Change this to be the height of the cylinder
-			D3DXMatrixTranslation(&move, 0.f, 5.f, 0.f);
+			D3DXMatrixTranslation(&move, 0.f, m_Cylinders.back()->cylinderHeight, 0.f);
 			D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
 
-
 			break;
-		case 'B':
-			//Spawn a smaller cylinder
-			//Spawn a cylinder and move position
+
+		case 'A':
+
+			//Create leaf
 			transformMatrix = (rotation * move)*transformMatrix;
 
+			m_Leaves.push_back(new leafclass());
+			m_Leaves.back()->Initialize(m_Direct3D->GetDevice());
 
-			m_Cylinders.push_back(new cylinderclass());
-			m_Cylinders.back()->Initialize(m_Direct3D->GetDevice());
+			m_Leaves.back()->transform = transformMatrix;
 
-
-			m_Cylinders.back()->transform = transformMatrix;
-
-			D3DXMatrixTranslation(&move, 0.f, 5.f, 0.f);
+			//Change this to be the height of the cylinder
 			D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
 
 			break;
-		case '[':
-			//Save position and rotation
-			matrixStack.push(transformMatrix);
-			rotation *= l;
 
+		case '[':
+
+			//Store the state
+			matrixStack.push(transformMatrix);
+			
 			break;
+
 		case ']':
-			//Go back to previous
+
+			//Revert the state
 			transformMatrix = matrixStack.top();
 			matrixStack.pop();
-			rotation *= r;
+
 			break;
+
+		case '&':
+
+			//Pitch out by X degrees
+			if (randNum == 1)
+			{
+				rotation *= f;
+			}
+			else
+			{
+				rotation *= b;
+			}
+
+		case '/':
+
+			//Rotate around Y +
+			rotation *= l;
+
+		case '\\':
+
+			//Rotate around Y -
+			rotation *= r;
+
 		default:
 			break;
 		}

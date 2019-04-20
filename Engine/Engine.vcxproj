@@ -97,6 +97,7 @@
     <ClCompile Include="include\imGUI\imgui_impl_dx11.cpp" />
     <ClCompile Include="include\imGUI\imgui_impl_win32.cpp" />
     <ClCompile Include="inputclass.cpp" />
+    <ClCompile Include="leafclass.cpp" />
     <ClCompile Include="lightclass.cpp" />
     <ClCompile Include="LSystemStringGenerator.cpp" />
     <ClCompile Include="main.cpp" />
@@ -127,6 +128,7 @@
     <ClInclude Include="include\imGUI\stb_textedit.h" />
     <ClInclude Include="include\imGUI\stb_truetype.h" />
     <ClInclude Include="inputclass.h" />
+    <ClInclude Include="leafclass.h" />
     <ClInclude Include="lightclass.h" />
     <ClInclude Include="LSystemStringGenerator.h" />
     <ClInclude Include="positionclass.h" />

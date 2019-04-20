@@ -3,12 +3,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "cylinderclass.h"
 
-cylinderclass::cylinderclass()
+cylinderclass::cylinderclass(float height)
 {
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
 	D3DXMatrixTranslation(&transform, 0.f, 0.f, 0.f);
 	D3DXMatrixRotationYawPitchRoll(&transform, 0.f, 0.f, 0.0f);
+	height = cylinderHeight;
 }
 
 
@@ -66,9 +67,10 @@ bool cylinderclass::InitializeBuffers(ID3D11Device* device)
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT result;
 
+	cylinderHeight = (rand() % 3) + 1; //Random height between 1 and 5
+
 	int sections = 25; //Number of sections/triangles in cylinder base
 	const float pi = 3.14159265359; //pi
-	float height = 5; //Height of cylinder
 
 	// Set the number of vertices in the vertex array.
 	m_vertexCount = ((3 * sections) * 2) + (sections * 6);
@@ -90,11 +92,11 @@ bool cylinderclass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	outerPoints = new D3DXVECTOR3[sections];
+	outerPoints = new D3DXVECTOR3[sections]; //Vector of outer points on the circle
 
-	float deltaTheta = (2 * pi) / sections; //Chnage in theta for each vertex
+	float deltaTheta = (2 * pi) / sections; //Change in theta for each vertex
 
-	D3DXVECTOR3 centrePoint = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 centrePoint = D3DXVECTOR3(0.0f, 0.0f, 0.0f); //Center point of circle
 
 	//Render bottom circle
 	for (int i = 0; i < sections; i++)
@@ -104,17 +106,17 @@ bool cylinderclass::InitializeBuffers(ID3D11Device* device)
 
 		// Load the vertex array with data.
 		//Given an angle theta, cos will give you the x coordinate and sin will give you the y coordinate
-		vertices[index + 0].position = centrePoint;
-		vertices[index + 0].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 0].position = centrePoint / radiusDivider;
+		vertices[index + 0].color = cylinderColour;
 		indices[index + 0] = index + 0;
 
-		vertices[index + 1].position = centrePoint + D3DXVECTOR3(cos(theta), 0.0f, sin(theta));
-		vertices[index + 1].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 1].position = (centrePoint + D3DXVECTOR3(cos(theta), 0.0f, sin(theta))) / radiusDivider;
+		vertices[index + 1].color = cylinderColour;
 		indices[index + 1] = index + 1;
-		outerPoints[i] = centrePoint + D3DXVECTOR3(cos(theta), 0.0f, sin(theta));
+		outerPoints[i] = (centrePoint + D3DXVECTOR3(cos(theta), 0.0f, sin(theta))) / radiusDivider;
 
-		vertices[index + 2].position = centrePoint + D3DXVECTOR3(cos(theta + deltaTheta), 0.0f, sin(theta + deltaTheta));
-		vertices[index + 2].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 2].position = (centrePoint + D3DXVECTOR3(cos(theta + deltaTheta), 0.0f, sin(theta + deltaTheta))) / radiusDivider;
+		vertices[index + 2].color = cylinderColour;
 		indices[index + 2] = index + 2;
 	}
 
@@ -126,16 +128,16 @@ bool cylinderclass::InitializeBuffers(ID3D11Device* device)
 
 		// Load the vertex array with data.
 		//Given an angle theta, cos will give you the x coordinate and sin will give you the y coordinate
-		vertices[index + 0].position = centrePoint + D3DXVECTOR3(0.0f, height, 0.0f);
-		vertices[index + 0].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 0].position = (centrePoint + D3DXVECTOR3(0.0f, (cylinderHeight * radiusDivider), 0.0f)) / radiusDivider;
+		vertices[index + 0].color = cylinderColour;
 		indices[index + 0] = index + 0;
 
-		vertices[index + 1].position = centrePoint + D3DXVECTOR3(cos(theta + deltaTheta), height, sin(theta + deltaTheta));
-		vertices[index + 1].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 1].position = (centrePoint + D3DXVECTOR3(cos(theta + deltaTheta), (cylinderHeight * radiusDivider), sin(theta + deltaTheta))) / radiusDivider;
+		vertices[index + 1].color = cylinderColour;
 		indices[index + 1] = index + 1;
 
-		vertices[index + 2].position = centrePoint + D3DXVECTOR3(cos(theta), height, sin(theta));
-		vertices[index + 2].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 2].position = (centrePoint + D3DXVECTOR3(cos(theta), (cylinderHeight * radiusDivider), sin(theta))) / radiusDivider;
+		vertices[index + 2].color = cylinderColour;
 		indices[index + 2] = index + 2;
 	}
 
@@ -148,27 +150,27 @@ bool cylinderclass::InitializeBuffers(ID3D11Device* device)
 		// Load the vertex array with data.
 		//Given an angle theta, cos will give you the x coordinate and sin will give you the y coordinate
 		vertices[index + 0].position = outerPoints[i];
-		vertices[index + 0].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 0].color = cylinderColour;
 		indices[index + 0] = index + 0;
 
-		vertices[index + 1].position = outerPoints[i] + D3DXVECTOR3(0.0f, height, 0.0f);
-		vertices[index + 1].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 1].position = outerPoints[i] + D3DXVECTOR3(0.0f, cylinderHeight, 0.0f);
+		vertices[index + 1].color = cylinderColour;
 		indices[index + 1] = index + 1;
 
 		vertices[index + 2].position = outerPoints[(i + 1) % sections];
-		vertices[index + 2].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 2].color = cylinderColour;
 		indices[index + 2] = index + 2;
 
-		vertices[index + 3].position = outerPoints[i] + D3DXVECTOR3(0.0f, height, 0.0f);
-		vertices[index + 3].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 3].position = outerPoints[i] + D3DXVECTOR3(0.0f, cylinderHeight, 0.0f);
+		vertices[index + 3].color = cylinderColour;
 		indices[index + 3] = index + 3;
 
-		vertices[index + 4].position = outerPoints[(i + 1) % sections] + D3DXVECTOR3(0.0f, height, 0.0f);
-		vertices[index + 4].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 4].position = outerPoints[(i + 1) % sections] + D3DXVECTOR3(0.0f, cylinderHeight, 0.0f);
+		vertices[index + 4].color = cylinderColour;
 		indices[index + 4] = index + 4;
 
 		vertices[index + 5].position = outerPoints[(i + 1) % sections];
-		vertices[index + 5].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
+		vertices[index + 5].color = cylinderColour;
 		indices[index + 5] = index + 5;
 	}
 

@@ -30,6 +30,7 @@ const float SCREEN_NEAR = 0.1f;
 #include "terrainshaderclass.h"
 #include "lightclass.h"
 #include "cylinderclass.h"
+#include "leafclass.h"
 #include "ColorShaderClass.h"
 #include "LSystemStringGenerator.h"
 #include <vector>
@@ -63,7 +64,7 @@ public:
 	bool Frame();
 
 	void gui();
-	int faultValue = 5;
+	int faultValue = 1;
 	string LSystemString;
 
 private:
@@ -88,6 +89,8 @@ private:
 	LightClass* m_Light;
 	cylinderclass* m_cylinder;
 	std::vector<cylinderclass*> m_Cylinders;
+	leafclass* m_leaf;
+	std::vector<leafclass*> m_Leaves;
 	ColorShaderClass* m_ColorShader;
 	LSystemStringGenerator* m_LSystem;
 };
