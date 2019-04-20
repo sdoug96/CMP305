@@ -29,6 +29,10 @@ const float SCREEN_NEAR = 0.1f;
 #include "textclass.h"
 #include "terrainshaderclass.h"
 #include "lightclass.h"
+#include "cylinderclass.h"
+#include "ColorShaderClass.h"
+#include "LSystemStringGenerator.h"
+#include <vector>
 
 //GUI INCLUDES
 
@@ -60,11 +64,13 @@ public:
 
 	void gui();
 	int faultValue = 5;
+	string LSystemString;
 
 private:
 
 	bool HandleInput(float);
 	bool RenderGraphics();
+	void ParseLSystem();
 
 private:
 
@@ -80,6 +86,10 @@ private:
 	TextClass* m_Text;
 	TerrainShaderClass* m_TerrainShader;
 	LightClass* m_Light;
+	cylinderclass* m_cylinder;
+	std::vector<cylinderclass*> m_Cylinders;
+	ColorShaderClass* m_ColorShader;
+	LSystemStringGenerator* m_LSystem;
 };
 
 #endif

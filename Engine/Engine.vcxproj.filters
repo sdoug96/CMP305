@@ -87,6 +87,15 @@
     <ClCompile Include="include\imGUI\imgui.cpp">
       <Filter>Source Files\ImGUI</Filter>
     </ClCompile>
+    <ClCompile Include="cylinderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LSystemStringGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorShaderClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="applicationclass.h">
@@ -161,6 +170,15 @@
     <ClInclude Include="include\imGUI\stb_truetype.h">
       <Filter>Header Files\ImGUI</Filter>
     </ClInclude>
+    <ClInclude Include="cylinderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LSystemStringGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="terrain.vs">
@@ -173,6 +191,12 @@
       <Filter>Shader Files</Filter>
     </None>
     <None Include="terrain.ps">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="color.vs">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="color.ps">
       <Filter>Shader Files</Filter>
     </None>
   </ItemGroup>

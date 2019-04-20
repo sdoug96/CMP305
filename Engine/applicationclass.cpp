@@ -2,7 +2,7 @@
 // Filename: applicationclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "applicationclass.h"
-
+#include <stack>
 
 ApplicationClass::ApplicationClass()
 {
@@ -18,6 +18,8 @@ ApplicationClass::ApplicationClass()
 	m_Text = 0;
 	m_TerrainShader = 0;
 	m_Light = 0;
+	m_cylinder = 0;
+	m_ColorShader = 0;
 }
 
 
@@ -39,6 +41,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	char videoCard[128];
 	int videoMemory;
 
+	ShowCursor(true);
 
 	// Create the input object.  The input object will be used to handle reading the keyboard and mouse input from the user.
 	m_Input = new InputClass;
@@ -85,9 +88,39 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	// Set the initial position of the camera.
 	cameraX = 50.0f;
 	cameraY = 2.0f;
-	cameraZ = -7.0f;
+	cameraZ = 50.0f;
 
 	m_Camera->SetPosition(cameraX, cameraY, cameraZ);
+
+	// Create the model object.
+	m_cylinder = new cylinderclass;
+	if (!m_cylinder)
+	{
+		return false;
+	}
+
+	// Initialize the model object.
+	result = m_cylinder->Initialize(m_Direct3D->GetDevice());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
+		return false;
+	}
+
+	// Create the color shader object.
+	m_ColorShader = new ColorShaderClass;
+	if (!m_ColorShader)
+	{
+		return false;
+	}
+
+	// Initialize the color shader object.
+	result = m_ColorShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the color shader object.", L"Error", MB_OK);
+		return false;
+	}
 
 	// Create the terrain object.
 	m_Terrain = new TerrainClass;
@@ -97,8 +130,10 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	}
 
 	// Initialize the terrain object.
-//	result = m_Terrain->Initialize(m_Direct3D->GetDevice(), "../Engine/data/heightmap01.bmp");
-	result = m_Terrain->InitializeTerrain(m_Direct3D->GetDevice(), 128, 128);   //initialise the flat terrain.
+	//result = m_Terrain->Initialize(m_Direct3D->GetDevice(), "../Engine/data/heightmap01.bmp", L"../Engine/data/grass.dds", L"../Engine/data/slope.dds",
+		//L"../Engine/data/rock.dds");
+	result = m_Terrain->InitializeTerrain(m_Direct3D->GetDevice(), 128, 128, L"../Engine/data/grass.dds", L"../Engine/data/slope.dds",
+		L"../Engine/data/rock.dds");   //initialise the flat terrain.
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the terrain object.", L"Error", MB_OK);
@@ -218,6 +253,18 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(1.0f, -1.0f, 0.0f);
 
+
+	//Initialize GUI
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.WantCaptureMouse = true;
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX11_Init(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext());
+
+
+	LSystemString = m_LSystem->generateString("A");
+	ParseLSystem();
+
 	return true;
 }
 
@@ -315,6 +362,22 @@ void ApplicationClass::Shutdown()
 		m_Input = 0;
 	}
 
+	// Release the model object.
+	if (m_cylinder)
+	{
+		m_cylinder->Shutdown();
+		delete m_cylinder;
+		m_cylinder = 0;
+	}
+
+	// Release the color shader object.
+	if (m_ColorShader)
+	{
+		m_ColorShader->Shutdown();
+		delete m_ColorShader;
+		m_ColorShader = 0;
+	}
+
 	return;
 }
 
@@ -322,7 +385,6 @@ void ApplicationClass::Shutdown()
 bool ApplicationClass::Frame()
 {
 	bool result;
-
 
 	// Read the user input.
 	result = m_Input->Frame();
@@ -405,6 +467,12 @@ bool ApplicationClass::HandleInput(float frameTime)
 	keyDown = m_Input->IsSPressed();
 	m_Position->MoveBackward(keyDown);
 
+	keyDown = m_Input->IsAPressed();
+	m_Position->MoveLeft(keyDown);
+
+	keyDown = m_Input->IsDPressed();
+	m_Position->MoveRight(keyDown);
+
 	keyDown = m_Input->IsEPressed();
 	m_Position->MoveUpward(keyDown);
 
@@ -442,12 +510,10 @@ bool ApplicationClass::HandleInput(float frameTime)
 	return true;
 }
 
-
 bool ApplicationClass::RenderGraphics()
 {
 	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix, orthoMatrix;
 	bool result;
-
 
 	// Clear the scene.
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
@@ -466,10 +532,23 @@ bool ApplicationClass::RenderGraphics()
 
 	// Render the terrain using the terrain shader.
 	result = m_TerrainShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection());
+		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetGrassTexture(),
+		m_Terrain->GetSlopeTexture(), m_Terrain->GetRockTexture());
 	if (!result)
 	{
 		return false;
+	}
+
+	for (int i = 0; i < m_Cylinders.size(); i++) {
+		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+		m_Cylinders[i]->Render(m_Direct3D->GetDeviceContext());
+
+		// Render the model using the color shader.
+		result = m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Cylinders[i]->GetIndexCount(), m_Cylinders[i]->transform, viewMatrix, projectionMatrix);
+		if (!result)
+		{
+			return false;
+		}
 	}
 
 	// Turn off the Z buffer to begin all 2D rendering.
@@ -485,13 +564,14 @@ bool ApplicationClass::RenderGraphics()
 		return false;
 	}
 
-	//gui();
-
 	// Turn off alpha blending after rendering the text.
 	m_Direct3D->TurnOffAlphaBlending();
 
 	// Turn the Z buffer back on now that all 2D rendering has completed.
 	m_Direct3D->TurnZBufferOn();
+
+	//Implement GUI functionality
+	//gui();
 
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();
@@ -499,11 +579,90 @@ bool ApplicationClass::RenderGraphics()
 	return true;
 }
 
+void ApplicationClass::ParseLSystem()
+{
+	D3DXMATRIX transformMatrix;
+	m_Direct3D->GetWorldMatrix(transformMatrix);
+
+	D3DXMATRIX move;
+	D3DXMATRIX rotation;
+
+	D3DXMATRIX l, r;
+	D3DXMatrixRotationYawPitchRoll(&l, 0.f, D3DXToRadian(45.f), 0.f);
+	D3DXMatrixRotationYawPitchRoll(&r, 0.f, D3DXToRadian(-45.f), 0.f);
+
+
+	D3DXMatrixTranslation(&move, 0.f, 0.f, 0.f);
+
+	//We're only ever moving up 5 on the (local) y
+	D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
+	//LSystemString = ;
+	std::stack<D3DXMATRIX> matrixStack;
+	for (int i = 0; i < LSystemString.length(); i++) {
+
+		switch (LSystemString[i])
+		{
+		case 'A':
+			//Spawn a cylinder and move position
+			transformMatrix = (rotation * move)*transformMatrix;
+
+			//Enable passing through of height/radius
+			m_Cylinders.push_back(new cylinderclass());
+			m_Cylinders.back()->Initialize(m_Direct3D->GetDevice());
+
+
+			m_Cylinders.back()->transform = transformMatrix;
+
+			//Change this to be the height of the cylinder
+			D3DXMatrixTranslation(&move, 0.f, 5.f, 0.f);
+			D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
+
+
+			break;
+		case 'B':
+			//Spawn a smaller cylinder
+			//Spawn a cylinder and move position
+			transformMatrix = (rotation * move)*transformMatrix;
+
+
+			m_Cylinders.push_back(new cylinderclass());
+			m_Cylinders.back()->Initialize(m_Direct3D->GetDevice());
+
+
+			m_Cylinders.back()->transform = transformMatrix;
+
+			D3DXMatrixTranslation(&move, 0.f, 5.f, 0.f);
+			D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
+
+			break;
+		case '[':
+			//Save position and rotation
+			matrixStack.push(transformMatrix);
+			rotation *= l;
+
+			break;
+		case ']':
+			//Go back to previous
+			transformMatrix = matrixStack.top();
+			matrixStack.pop();
+			rotation *= r;
+			break;
+		default:
+			break;
+		}
+
+	}
+}
+
 void ApplicationClass::gui()
 {
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
 	ImGui::SliderInt("Fault Value: ", &faultValue, 1, 5, 0);
 
-	// Render UI
+	// Render dear imgui into screen
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

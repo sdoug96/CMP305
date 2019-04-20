@@ -2,6 +2,13 @@
 // Filename: terrain.ps
 ////////////////////////////////////////////////////////////////////////////////
 
+//////////////
+// TEXTURES //
+//////////////
+
+Texture2D grassTexture : register(t0);
+Texture2D slopeTexture : register(t1);
+Texture2D rockTexture  : register(t2);
 
 /////////////
 // GLOBALS //
@@ -23,6 +30,7 @@ cbuffer LightBuffer
 struct PixelInputType
 {
     float4 position : SV_POSITION;
+	float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
 };
 
@@ -32,13 +40,36 @@ struct PixelInputType
 ////////////////////////////////////////////////////////////////////////////////
 float4 TerrainPixelShader(PixelInputType input) : SV_TARGET
 {
+    float4 grassColour;
+	float4 slopeColour;
+	float4 rockColour;
+	float slope;
+	float blend;
+	float4 texColour;
 	float3 lightDir;
 	float lightIntensity;
 	float4 color;
 
+	grassColour = grassTexture.Sample(SampleType, input.tex);
+	slopeColour = slopeTexture.Sample(SampleType, input.tex);
+	rockColour = rockTexture.Sample(SampleType, input.tex);
 
-	// Set the default output color to the ambient light value for all pixels.
-    color = ambientColor;
+	slope = 1.0f - input.normal.y;
+
+	if (slope < 0.2f)
+	{
+	    blend = slope / 0.2f;
+		texColour = lerp(grassColour, slopeColour, blend);
+	}
+	if((slope < 0.7) && (slope >= 0.2f))
+	{
+	    blend = (slope - 0.2f) * (1.0f / (0.7f - 0.2f));
+		texColour = lerp(slopeColour, rockColour, blend);
+	}
+	if (slope >= 0.7f)
+	{
+	    texColour = rockColour;
+	}
 
 	// Invert the light direction for calculations.
     lightDir = -lightDirection;
@@ -46,14 +77,14 @@ float4 TerrainPixelShader(PixelInputType input) : SV_TARGET
     // Calculate the amount of light on this pixel.
     lightIntensity = saturate(dot(input.normal, lightDir));
 
-	if(lightIntensity > 0.0f)
-    {
-        // Determine the final diffuse color based on the diffuse color and the amount of light intensity.
-        color += (diffuseColor * lightIntensity);
-    }
+    // Determine the final diffuse color based on the diffuse color and the amount of light intensity.
+    color = diffuseColor * lightIntensity;
 
     // Saturate the final light color.
     color = saturate(color);
+
+	// Multiply the texture color and the final light color to get the result.
+    color = color * texColour;
 
     return color;
 }

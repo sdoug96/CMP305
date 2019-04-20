@@ -15,6 +15,9 @@ TerrainClass::TerrainClass()
 	m_heightMap = 0;
 	m_smoothMap = 0;
 	m_terrainGeneratedToggle = false;
+	grassTexture = 0;
+	slopeTexture = 0;
+	rockTexture = 0;
 
 	for (int i = 0; i < 256; i++) p[256 + i] = p[i] = permutation[i];
 
@@ -30,7 +33,8 @@ TerrainClass::~TerrainClass()
 {
 }
 
-bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int terrainHeight)
+bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int terrainHeight, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+	WCHAR* rockTextureFilename)
 {
 	int index;
 	float height = 0.0;
@@ -77,6 +81,16 @@ bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int
 		return false;
 	}
 
+	// Calculate the texture coordinates.
+	CalculateTextureCoordinates();
+
+	// Load the textures.
+	result = LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
+	if (!result)
+	{
+		return false;
+	}
+
 	// Initialize the vertex and index buffer that hold the geometry for the terrain.
 	result = InitializeBuffers(device);
 	if (!result)
@@ -87,7 +101,8 @@ bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int
 	return true;
 }
 
-bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename)
+bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+	WCHAR* rockTextureFilename)
 {
 	bool result;
 
@@ -103,6 +118,16 @@ bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename)
 
 	// Calculate the normals for the terrain data.
 	result = CalculateNormals();
+	if (!result)
+	{
+		return false;
+	}
+
+	// Calculate the texture coordinates.
+	CalculateTextureCoordinates();
+
+	// Load the textures.
+	result = LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
 	if (!result)
 	{
 		return false;
@@ -143,6 +168,21 @@ void TerrainClass::Render(ID3D11DeviceContext* deviceContext)
 int TerrainClass::GetIndexCount()
 {
 	return m_indexCount;
+}
+
+ID3D11ShaderResourceView* TerrainClass::GetGrassTexture()
+{
+	return grassTexture->GetTexture();
+}
+
+ID3D11ShaderResourceView* TerrainClass::GetSlopeTexture()
+{
+	return slopeTexture->GetTexture();
+}
+
+ID3D11ShaderResourceView* TerrainClass::GetRockTexture()
+{
+	return rockTexture->GetTexture();
 }
 
 bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
@@ -292,6 +332,9 @@ bool TerrainClass::SmoothTerrain(ID3D11Device* device, bool keydown)
 		return false;
 	}
 
+	// Calculate the texture coordinates.
+	CalculateTextureCoordinates();
+
 	// Initialize the vertex and index buffer that hold the geometry for the terrain.
 	result = InitializeBuffers(device);
 	if (!result)
@@ -369,17 +412,15 @@ float TerrainClass::PerlinNoise(float x, float y, float z)
 	int A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z,
 		B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
 
-	return Lerp(w, Lerp(v, Lerp(u, Grad(p[AA], x, y, z),  // AND ADD
-		Grad(p[BA], x - 1, y, z)), // BLENDED
-		Lerp(u, Grad(p[AB], x, y - 1, z),  // RESULTS
-			Grad(p[BB], x - 1, y - 1, z))),// FROM  8
-		Lerp(v, Lerp(u, Grad(p[AA + 1], x, y, z - 1),  // CORNERS
-			Grad(p[BA + 1], x - 1, y, z - 1)), // OF CUBE
+	return Lerp(w, Lerp(v, Lerp(u, Grad(p[AA], x, y, z),
+		Grad(p[BA], x - 1, y, z)),
+		Lerp(u, Grad(p[AB], x, y - 1, z),
+			Grad(p[BB], x - 1, y - 1, z))),
+		Lerp(v, Lerp(u, Grad(p[AA + 1], x, y, z - 1),
+			Grad(p[BA + 1], x - 1, y, z - 1)),
 			Lerp(u, Grad(p[AB + 1], x, y - 1, z - 1),
 				Grad(p[BB + 1], x - 1, y - 1, z - 1))));
-
 }
-
 
 bool TerrainClass::LoadHeightMap(char* filename)
 {
@@ -645,6 +686,139 @@ void TerrainClass::ShutdownHeightMap()
 	return;
 }
 
+void TerrainClass::CalculateTextureCoordinates()
+{
+	int incrementCount, i, j, tuCount, tvCount;
+	float incrementValue, tuCoordinate, tvCoordinate;
+
+
+	// Calculate how much to increment the texture coordinates by.
+	incrementValue = (float)TEXTURE_REPEAT / (float)m_terrainWidth;
+
+	// Calculate how many times to repeat the texture.
+	incrementCount = m_terrainWidth / TEXTURE_REPEAT;
+
+	// Initialize the tu and tv coordinate values.
+	tuCoordinate = 0.0f;
+	tvCoordinate = 1.0f;
+
+	// Initialize the tu and tv coordinate indexes.
+	tuCount = 0;
+	tvCount = 0;
+
+	// Loop through the entire height map and calculate the tu and tv texture coordinates for each vertex.
+	for (j = 0; j < m_terrainHeight; j++)
+	{
+		for (i = 0; i < m_terrainWidth; i++)
+		{
+			// Store the texture coordinate in the height map.
+			m_heightMap[(m_terrainHeight * j) + i].tu = tuCoordinate;
+			m_heightMap[(m_terrainHeight * j) + i].tv = tvCoordinate;
+
+			// Increment the tu texture coordinate by the increment value and increment the index by one.
+			tuCoordinate += incrementValue;
+			tuCount++;
+
+			// Check if at the far right end of the texture and if so then start at the beginning again.
+			if (tuCount == incrementCount)
+			{
+				tuCoordinate = 0.0f;
+				tuCount = 0;
+			}
+		}
+
+		// Increment the tv texture coordinate by the increment value and increment the index by one.
+		tvCoordinate -= incrementValue;
+		tvCount++;
+
+		// Check if at the top of the texture and if so then start at the bottom again.
+		if (tvCount == incrementCount)
+		{
+			tvCoordinate = 1.0f;
+			tvCount = 0;
+		}
+	}
+
+	return;
+}
+
+bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename)
+{
+	bool result;
+
+	// Create the grass texture object.
+	grassTexture = new TextureClass;
+	if (!grassTexture)
+	{
+		return false;
+	}
+
+	// Initialize the grass texture object.
+	result = grassTexture->Initialize(device, grassTextureFilename);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Create the slope texture object.
+	slopeTexture = new TextureClass;
+	if (!slopeTexture)
+	{
+		return false;
+	}
+
+	// Initialize the slope texture object.
+	result = slopeTexture->Initialize(device, slopeTextureFilename);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Create the rock texture object.
+	rockTexture = new TextureClass;
+	if (!rockTexture)
+	{
+		return false;
+	}
+
+	// Initialize the rock texture object.
+	result = rockTexture->Initialize(device, rockTextureFilename);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void TerrainClass::ReleaseTextures()
+{
+	// Release the texture objects.
+	if (grassTexture)
+	{
+		grassTexture->Shutdown();
+		delete grassTexture;
+		grassTexture = 0;
+	}
+
+	if (slopeTexture)
+	{
+		slopeTexture->Shutdown();
+		delete slopeTexture;
+		slopeTexture = 0;
+	}
+
+	if (rockTexture)
+	{
+		rockTexture->Shutdown();
+		delete rockTexture;
+		rockTexture = 0;
+	}
+
+	return;
+}
+
+
 
 bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 {
@@ -655,6 +829,7 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT result;
 	int index1, index2, index3, index4;
+	float tu, tv;
 
 
 	// Calculate the number of vertices in the terrain mesh.
@@ -690,38 +865,68 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 			index3 = (m_terrainHeight * (j + 1)) + i;      // Upper left.
 			index4 = (m_terrainHeight * (j + 1)) + (i + 1);  // Upper right.
 
-			// Upper left.
+															 // Upper left.
+			tv = m_heightMap[index3].tv;
+
+			// Modify the texture coordinates to cover the top edge.
+			if (tv == 1.0f) { tv = 0.0f; }
+
 			vertices[index].position = D3DXVECTOR3(m_heightMap[index3].x, m_heightMap[index3].y, m_heightMap[index3].z);
+			vertices[index].texture = D3DXVECTOR2(m_heightMap[index3].tu, tv);
 			vertices[index].normal = D3DXVECTOR3(m_heightMap[index3].nx, m_heightMap[index3].ny, m_heightMap[index3].nz);
 			indices[index] = index;
 			index++;
 
 			// Upper right.
+			tu = m_heightMap[index4].tu;
+			tv = m_heightMap[index4].tv;
+
+			// Modify the texture coordinates to cover the top and right edge.
+			if (tu == 0.0f) { tu = 1.0f; }
+			if (tv == 1.0f) { tv = 0.0f; }
+
 			vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
+			vertices[index].texture = D3DXVECTOR2(tu, tv);
 			vertices[index].normal = D3DXVECTOR3(m_heightMap[index4].nx, m_heightMap[index4].ny, m_heightMap[index4].nz);
 			indices[index] = index;
 			index++;
 
 			// Bottom left.
 			vertices[index].position = D3DXVECTOR3(m_heightMap[index1].x, m_heightMap[index1].y, m_heightMap[index1].z);
+			vertices[index].texture = D3DXVECTOR2(m_heightMap[index1].tu, m_heightMap[index1].tv);
 			vertices[index].normal = D3DXVECTOR3(m_heightMap[index1].nx, m_heightMap[index1].ny, m_heightMap[index1].nz);
 			indices[index] = index;
 			index++;
 
 			// Bottom left.
 			vertices[index].position = D3DXVECTOR3(m_heightMap[index1].x, m_heightMap[index1].y, m_heightMap[index1].z);
+			vertices[index].texture = D3DXVECTOR2(m_heightMap[index1].tu, m_heightMap[index1].tv);
 			vertices[index].normal = D3DXVECTOR3(m_heightMap[index1].nx, m_heightMap[index1].ny, m_heightMap[index1].nz);
 			indices[index] = index;
 			index++;
 
 			// Upper right.
+			tu = m_heightMap[index4].tu;
+			tv = m_heightMap[index4].tv;
+
+			// Modify the texture coordinates to cover the top and right edge.
+			if (tu == 0.0f) { tu = 1.0f; }
+			if (tv == 1.0f) { tv = 0.0f; }
+
 			vertices[index].position = D3DXVECTOR3(m_heightMap[index4].x, m_heightMap[index4].y, m_heightMap[index4].z);
+			vertices[index].texture = D3DXVECTOR2(tu, tv);
 			vertices[index].normal = D3DXVECTOR3(m_heightMap[index4].nx, m_heightMap[index4].ny, m_heightMap[index4].nz);
 			indices[index] = index;
 			index++;
 
 			// Bottom right.
+			tu = m_heightMap[index2].tu;
+
+			// Modify the texture coordinates to cover the right edge.
+			if (tu == 0.0f) { tu = 1.0f; }
+
 			vertices[index].position = D3DXVECTOR3(m_heightMap[index2].x, m_heightMap[index2].y, m_heightMap[index2].z);
+			vertices[index].texture = D3DXVECTOR2(tu, m_heightMap[index2].tv);
 			vertices[index].normal = D3DXVECTOR3(m_heightMap[index2].nx, m_heightMap[index2].ny, m_heightMap[index2].nz);
 			indices[index] = index;
 			index++;

@@ -48,6 +48,8 @@ public:
 	bool IsRightPressed();
 	bool IsWPressed();
 	bool IsSPressed();
+	bool IsAPressed();
+	bool IsDPressed();
 	bool IsEPressed();
 	bool IsQPressed();
 	bool IsUpPressed();

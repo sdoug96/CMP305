@@ -11,6 +11,12 @@
 #include <d3d11.h>
 #include <d3dx10math.h>
 #include <stdio.h>
+#include "TextureClass.h"
+
+/////////////
+// GLOBALS //
+/////////////
+const int TEXTURE_REPEAT = 32;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,12 +28,14 @@ private:
 	struct VertexType
 	{
 		D3DXVECTOR3 position;
+		D3DXVECTOR2 texture;
 		D3DXVECTOR3 normal;
 	};
 
 	struct HeightMapType
 	{
 		float x, y, z;
+		float tu, tv;
 		float nx, ny, nz;
 	};
 
@@ -41,8 +49,10 @@ public:
 	TerrainClass(const TerrainClass&);
 	~TerrainClass();
 
-	bool Initialize(ID3D11Device*, char*);
-	bool InitializeTerrain(ID3D11Device*, int terrainWidth, int terrainHeight);
+	bool Initialize(ID3D11Device*, char*, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+		WCHAR* rockTextureFilename);
+	bool InitializeTerrain(ID3D11Device*, int terrainWidth, int terrainHeight, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+		WCHAR* rockTextureFilename);
 	void Shutdown();
 	void Render(ID3D11DeviceContext*);
 	bool GenerateHeightMap(ID3D11Device* device, bool keydown);
@@ -53,6 +63,14 @@ public:
 	float Grad(int hash, float x, float y, float z);
 	float PerlinNoise(float x, float y, float z);
 	int  GetIndexCount();
+
+	ID3D11ShaderResourceView* GetGrassTexture();
+	ID3D11ShaderResourceView* GetSlopeTexture();
+	ID3D11ShaderResourceView* GetRockTexture();
+
+	TextureClass* grassTexture;
+	TextureClass* slopeTexture;
+	TextureClass* rockTexture;
 
 	int p[512];
 	int permutation[256] = { 151,160,137,91,90,15,
@@ -75,6 +93,11 @@ private:
 	void NormalizeHeightMap();
 	bool CalculateNormals();
 	void ShutdownHeightMap();
+
+	void CalculateTextureCoordinates();
+
+	bool LoadTextures(ID3D11Device*, WCHAR*, WCHAR*, WCHAR*);
+	void ReleaseTextures();
 
 	bool InitializeBuffers(ID3D11Device*);
 	void ShutdownBuffers();

@@ -84,7 +84,9 @@
   <ItemGroup>
     <ClCompile Include="applicationclass.cpp" />
     <ClCompile Include="cameraclass.cpp" />
+    <ClCompile Include="ColorShaderClass.cpp" />
     <ClCompile Include="cpuclass.cpp" />
+    <ClCompile Include="cylinderclass.cpp" />
     <ClCompile Include="d3dclass.cpp" />
     <ClCompile Include="fontclass.cpp" />
     <ClCompile Include="fontshaderclass.cpp" />
@@ -96,6 +98,7 @@
     <ClCompile Include="include\imGUI\imgui_impl_win32.cpp" />
     <ClCompile Include="inputclass.cpp" />
     <ClCompile Include="lightclass.cpp" />
+    <ClCompile Include="LSystemStringGenerator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="positionclass.cpp" />
     <ClCompile Include="systemclass.cpp" />
@@ -108,7 +111,9 @@
   <ItemGroup>
     <ClInclude Include="applicationclass.h" />
     <ClInclude Include="cameraclass.h" />
+    <ClInclude Include="ColorShaderClass.h" />
     <ClInclude Include="cpuclass.h" />
+    <ClInclude Include="cylinderclass.h" />
     <ClInclude Include="d3dclass.h" />
     <ClInclude Include="fontclass.h" />
     <ClInclude Include="fontshaderclass.h" />
@@ -123,6 +128,7 @@
     <ClInclude Include="include\imGUI\stb_truetype.h" />
     <ClInclude Include="inputclass.h" />
     <ClInclude Include="lightclass.h" />
+    <ClInclude Include="LSystemStringGenerator.h" />
     <ClInclude Include="positionclass.h" />
     <ClInclude Include="systemclass.h" />
     <ClInclude Include="terrainclass.h" />
@@ -132,6 +138,14 @@
     <ClInclude Include="timerclass.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="color.ps">
+      <FileType>Document</FileType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+    </None>
+    <None Include="color.vs">
+      <FileType>Document</FileType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+    </None>
     <None Include="font.ps" />
     <None Include="font.vs" />
     <None Include="terrain.ps" />
