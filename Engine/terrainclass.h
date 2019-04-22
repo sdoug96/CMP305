@@ -56,6 +56,7 @@ public:
 	void Shutdown();
 	void Render(ID3D11DeviceContext*);
 	bool GenerateHeightMap(ID3D11Device* device, bool keydown);
+	float getXZHeight(float xpos, float zpos);
 	bool SmoothTerrain(ID3D11Device* device, bool keydown);
 	void Faulting(ID3D11Device* device, bool keydown, int faultValue);
 	float Fade(float t);

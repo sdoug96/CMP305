@@ -277,7 +277,6 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	ImGui_ImplDX11_Init(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext());
 
 	LSystemString = m_LSystem->generateString("FA", 5);
-	ParseLSystem();
 
 	return true;
 }
@@ -463,13 +462,16 @@ bool ApplicationClass::HandleInput(float frameTime)
 	bool keyDown, result;
 	float posX, posY, posZ, rotX, rotY, rotZ;
 
-
 	// Set the frame time for calculating the updated position.
 	m_Position->SetFrameTime(frameTime);
 
 	// Handle the input.
 	keyDown = m_Input->IsSpacePressed();
-	m_Terrain->GenerateHeightMap(m_Direct3D->GetDevice(), keyDown);
+	if (keyDown)
+	{
+		ParseLSystem(0, 0, 0);
+	}
+	//m_Terrain->GenerateHeightMap(m_Direct3D->GetDevice(), keyDown);
 
 	keyDown = m_Input->IsMPressed();
 	m_Terrain->SmoothTerrain(m_Direct3D->GetDevice(), keyDown);
@@ -617,11 +619,15 @@ bool ApplicationClass::RenderGraphics()
 	return true;
 }
 
-void ApplicationClass::ParseLSystem()
+void ApplicationClass::ParseLSystem(float xpos, float ypos, float zpos)
 {
+	xpos = (rand() % 128) + 1;
+	zpos = (rand() % 128) + 1;
+	ypos = m_Terrain->getXZHeight(xpos, zpos);
+
 	D3DXMATRIX transformMatrix;
 	m_Direct3D->GetWorldMatrix(transformMatrix);
-	D3DXMatrixTranslation(&transformMatrix, 50.f, 0.f, 75.f);
+	D3DXMatrixTranslation(&transformMatrix, xpos, ypos, zpos);
 
 	D3DXMATRIX move;
 	D3DXMATRIX rotation;
@@ -630,12 +636,14 @@ void ApplicationClass::ParseLSystem()
 	D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
 
 	D3DXMATRIX l, r, f, b;
-	D3DXMatrixRotationYawPitchRoll(&l, 0.f, D3DXToRadian(45.f), 0.f);
-	D3DXMatrixRotationYawPitchRoll(&r, 0.f, D3DXToRadian(-45.f), 0.f);
-	D3DXMatrixRotationYawPitchRoll(&f, D3DXToRadian(45.f), 0.f, 0.f);
-	D3DXMatrixRotationYawPitchRoll(&b, D3DXToRadian(-45.f), 0.f, 0.f);
+	D3DXMatrixRotationYawPitchRoll(&l, D3DXToRadian(120.f), 0.f, 0.f);
+	D3DXMatrixRotationYawPitchRoll(&r, D3DXToRadian(-120.f), 0.f, 0.f);
+	D3DXMatrixRotationYawPitchRoll(&f, 0.f, D3DXToRadian(25.f), 0.f);
+	D3DXMatrixRotationYawPitchRoll(&b, 0.f, D3DXToRadian(15.f), 0.f);
 
 	std::stack<D3DXMATRIX> matrixStack;
+	std::stack<D3DXMATRIX> moveStack;
+	std::stack<D3DXMATRIX> rotationStack;
 
 	// [ = store the state
     // ] = revert the state
@@ -651,6 +659,8 @@ void ApplicationClass::ParseLSystem()
 		switch (LSystemString[i])
 		{
 		case 'F':
+		{
+			float h = 0;
 
 			//Create a cylinder
 			transformMatrix = (rotation * move) * transformMatrix;
@@ -659,12 +669,14 @@ void ApplicationClass::ParseLSystem()
 			m_Cylinders.push_back(new cylinderclass(0));
 			m_Cylinders.back()->Initialize(m_Direct3D->GetDevice());
 
+			h = m_Cylinders.back()->cylinderHeight;
+
 			m_Cylinders.back()->transform = transformMatrix;
 
 			//Move to new position and reset rotation
-			D3DXMatrixTranslation(&move, 0.f, m_Cylinders.back()->cylinderHeight, 0.f);
+			D3DXMatrixTranslation(&move, 0.f, h, 0.f);
 			D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
-
+		}
 			break;
 
 		case 'A':
@@ -687,6 +699,8 @@ void ApplicationClass::ParseLSystem()
 
 			//Store the state
 			matrixStack.push(transformMatrix);
+			moveStack.push(move);
+			rotationStack.push(rotation);
 			
 			break;
 
@@ -695,6 +709,10 @@ void ApplicationClass::ParseLSystem()
 			//Revert the state
 			transformMatrix = matrixStack.top();
 			matrixStack.pop();
+			move = moveStack.top();
+			moveStack.pop();
+			rotation = rotationStack.top();
+			rotationStack.pop();
 
 			break;
 
@@ -710,15 +728,21 @@ void ApplicationClass::ParseLSystem()
 				rotation *= b;
 			}
 
+			break;
+
 		case '/':
 
 			//Rotate around Y +
 			rotation *= l;
 
+			break;
+
 		case '\\':
 
 			//Rotate around Y -
 			rotation *= r;
+
+			break;
 
 		default:
 			break;

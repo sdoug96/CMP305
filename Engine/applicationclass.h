@@ -71,7 +71,7 @@ private:
 
 	bool HandleInput(float);
 	bool RenderGraphics();
-	void ParseLSystem();
+	void ParseLSystem(float xpos, float ypos, float zpos);
 
 private:
 

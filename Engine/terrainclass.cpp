@@ -245,6 +245,13 @@ bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
 	return true;
 }
 
+float TerrainClass::getXZHeight(float xpos, float zpos)
+{
+	int index = (m_terrainHeight * zpos) + xpos;
+
+	return m_heightMap[index].y;
+}
+
 int TerrainClass::GetIndex(int x, int y)
 {
 	return (m_terrainHeight * y) + x;
