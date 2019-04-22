@@ -34,7 +34,7 @@ TerrainClass::~TerrainClass()
 }
 
 bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int terrainHeight, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-	WCHAR* rockTextureFilename)
+	WCHAR* rockTextureFilename, WCHAR* snowTextureFilename)
 {
 	int index;
 	float height = 0.0;
@@ -85,7 +85,7 @@ bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int
 	CalculateTextureCoordinates();
 
 	// Load the textures.
-	result = LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
+	result = LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename, snowTextureFilename);
 	if (!result)
 	{
 		return false;
@@ -102,7 +102,7 @@ bool TerrainClass::InitializeTerrain(ID3D11Device* device, int terrainWidth, int
 }
 
 bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-	WCHAR* rockTextureFilename)
+	WCHAR* rockTextureFilename, WCHAR* snowTextureFilename)
 {
 	bool result;
 
@@ -127,7 +127,7 @@ bool TerrainClass::Initialize(ID3D11Device* device, char* heightMapFilename, WCH
 	CalculateTextureCoordinates();
 
 	// Load the textures.
-	result = LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
+	result = LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename, snowTextureFilename);
 	if (!result)
 	{
 		return false;
@@ -183,6 +183,11 @@ ID3D11ShaderResourceView* TerrainClass::GetSlopeTexture()
 ID3D11ShaderResourceView* TerrainClass::GetRockTexture()
 {
 	return rockTexture->GetTexture();
+}
+
+ID3D11ShaderResourceView* TerrainClass::GetSnowTexture()
+{
+	return snowTexture->GetTexture();
 }
 
 bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
@@ -742,7 +747,7 @@ void TerrainClass::CalculateTextureCoordinates()
 	return;
 }
 
-bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename)
+bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* snowTextureFilename)
 {
 	bool result;
 
@@ -788,6 +793,20 @@ bool TerrainClass::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilenam
 		return false;
 	}
 
+	// Create the grass texture object.
+	snowTexture = new TextureClass;
+	if (!snowTexture)
+	{
+		return false;
+	}
+
+	// Initialize the grass texture object.
+	result = snowTexture->Initialize(device, snowTextureFilename);
+	if (!result)
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -813,6 +832,13 @@ void TerrainClass::ReleaseTextures()
 		rockTexture->Shutdown();
 		delete rockTexture;
 		rockTexture = 0;
+	}
+
+	if (snowTexture)
+	{
+		snowTexture->Shutdown();
+		delete snowTexture;
+		snowTexture = 0;
 	}
 
 	return;

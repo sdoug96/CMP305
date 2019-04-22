@@ -148,8 +148,8 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	// Initialize the terrain object.
 	//result = m_Terrain->Initialize(m_Direct3D->GetDevice(), "../Engine/data/heightmap01.bmp", L"../Engine/data/grass.dds", L"../Engine/data/slope.dds",
 		//L"../Engine/data/rock.dds");
-	result = m_Terrain->InitializeTerrain(m_Direct3D->GetDevice(), 128, 128, L"../Engine/data/grass.dds", L"../Engine/data/slope.dds",
-		L"../Engine/data/rock.dds");   //initialise the flat terrain.
+	result = m_Terrain->InitializeTerrain(m_Direct3D->GetDevice(), 128, 128, L"../Engine/data/grass.dds", L"../Engine/data/dirt.dds",
+		L"../Engine/data/rock.dds", L"../Engine/data/snow.dds");   //initialise the flat terrain.
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the terrain object.", L"Error", MB_OK);
@@ -555,7 +555,7 @@ bool ApplicationClass::RenderGraphics()
 	// Render the terrain using the terrain shader.
 	result = m_TerrainShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
 		m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetDirection(), m_Terrain->GetGrassTexture(),
-		m_Terrain->GetSlopeTexture(), m_Terrain->GetRockTexture());
+		m_Terrain->GetSlopeTexture(), m_Terrain->GetRockTexture(), m_Terrain->GetSnowTexture());
 	if (!result)
 	{
 		return false;
@@ -652,16 +652,16 @@ void ApplicationClass::ParseLSystem()
 		{
 		case 'F':
 
-			//Create a cylinder and move position
+			//Create a cylinder
 			transformMatrix = (rotation * move) * transformMatrix;
 
-			//Enable passing through of height/radius
+			//Add and initialise a new cylinder
 			m_Cylinders.push_back(new cylinderclass(0));
 			m_Cylinders.back()->Initialize(m_Direct3D->GetDevice());
 
 			m_Cylinders.back()->transform = transformMatrix;
 
-			//Change this to be the height of the cylinder
+			//Move to new position and reset rotation
 			D3DXMatrixTranslation(&move, 0.f, m_Cylinders.back()->cylinderHeight, 0.f);
 			D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
 
@@ -672,12 +672,13 @@ void ApplicationClass::ParseLSystem()
 			//Create leaf
 			transformMatrix = (rotation * move)*transformMatrix;
 
+			//Add and initialise a new leaf
 			m_Leaves.push_back(new leafclass());
 			m_Leaves.back()->Initialize(m_Direct3D->GetDevice());
 
 			m_Leaves.back()->transform = transformMatrix;
 
-			//Change this to be the height of the cylinder
+			//Reset rotation
 			D3DXMatrixRotationYawPitchRoll(&rotation, 0.f, 0.f, 0.0f);
 
 			break;

@@ -64,7 +64,7 @@ public:
 	bool Frame();
 
 	void gui();
-	int faultValue = 1;
+	int faultValue = 2;
 	string LSystemString;
 
 private:

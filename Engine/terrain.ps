@@ -9,6 +9,7 @@
 Texture2D grassTexture : register(t0);
 Texture2D slopeTexture : register(t1);
 Texture2D rockTexture  : register(t2);
+Texture2D snowTexture  : register(t3);
 
 /////////////
 // GLOBALS //
@@ -32,6 +33,7 @@ struct PixelInputType
     float4 position : SV_POSITION;
 	float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
+	float4 worldPos : POSITION;
 };
 
 
@@ -43,7 +45,9 @@ float4 TerrainPixelShader(PixelInputType input) : SV_TARGET
     float4 grassColour;
 	float4 slopeColour;
 	float4 rockColour;
+	float4 snowColour;
 	float slope;
+	float height;
 	float blend;
 	float4 texColour;
 	float3 lightDir;
@@ -53,25 +57,35 @@ float4 TerrainPixelShader(PixelInputType input) : SV_TARGET
 	grassColour = grassTexture.Sample(SampleType, input.tex);
 	slopeColour = slopeTexture.Sample(SampleType, input.tex);
 	rockColour = rockTexture.Sample(SampleType, input.tex);
+	snowColour = snowTexture.Sample(SampleType, input.tex);
 
 	slope = 1.0f - input.normal.y;
+	height = input.worldPos.y;
 
+	//If slope is small, blend between grass and slope textures
 	if (slope < 0.2f)
 	{
 	    blend = slope / 0.2f;
 		texColour = lerp(grassColour, slopeColour, blend);
 	}
-
-	if ((slope < 0.7) && (slope >= 0.2f))
+	//If slope is greater, place slope texture
+	else 
 	{
-	    blend = (slope - 0.2f) * (1.0f / (0.7f - 0.2f));
-		texColour = lerp(slopeColour, rockColour, blend);
+	    texColour = slopeColour;
 	}
 
-	if (slope >= 0.7f)
+	//At a certain height with a small enough slope, place snow texture
+	if ((height > 7.5f) && (slope < 0.2f))
 	{
-	    texColour = rockColour;
+	    texColour = snowColour;
 	}
+
+	//At a certain height with a greater slope, blend between snow and slop textures
+	//if ((height > 7.5f) && (slope > 0.2f))
+	//{
+	//    blend = 0f;
+	//	texColour = lerp(slopeColour, snowColour, blend);
+	//}
 
 	// Invert the light direction for calculations.
     lightDir = -lightDirection;

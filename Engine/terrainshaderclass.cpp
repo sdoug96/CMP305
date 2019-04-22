@@ -52,13 +52,13 @@ void TerrainShaderClass::Shutdown()
 
 bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix,
 	D3DXMATRIX projectionMatrix, D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, ID3D11ShaderResourceView* grassTexture,
-	ID3D11ShaderResourceView* slopeTexture, ID3D11ShaderResourceView* rockTexture)
+	ID3D11ShaderResourceView* slopeTexture, ID3D11ShaderResourceView* rockTexture, ID3D11ShaderResourceView* snowTexture)
 {
 	bool result;
 
 
 	// Set the shader parameters that it will use for rendering.
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, ambientColor, diffuseColor, lightDirection, grassTexture, slopeTexture, rockTexture);
+	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, ambientColor, diffuseColor, lightDirection, grassTexture, slopeTexture, rockTexture, snowTexture);
 	if (!result)
 	{
 		return false;
@@ -327,7 +327,7 @@ void TerrainShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND
 
 bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix,
 	D3DXMATRIX projectionMatrix, D3DXVECTOR4 ambientColor, D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, ID3D11ShaderResourceView* grassTexture,
-	ID3D11ShaderResourceView* slopeTexture, ID3D11ShaderResourceView* rockTexture)
+	ID3D11ShaderResourceView* slopeTexture, ID3D11ShaderResourceView* rockTexture, ID3D11ShaderResourceView* snowTexture)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -394,6 +394,7 @@ bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->PSSetShaderResources(0, 1, &grassTexture);
 	deviceContext->PSSetShaderResources(1, 1, &slopeTexture);
 	deviceContext->PSSetShaderResources(2, 1, &rockTexture);
+	deviceContext->PSSetShaderResources(3, 1, &snowTexture);
 
 	return true;
 }

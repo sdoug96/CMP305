@@ -50,9 +50,9 @@ public:
 	~TerrainClass();
 
 	bool Initialize(ID3D11Device*, char*, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-		WCHAR* rockTextureFilename);
+		WCHAR* rockTextureFilename, WCHAR* snowTextureFilename);
 	bool InitializeTerrain(ID3D11Device*, int terrainWidth, int terrainHeight, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-		WCHAR* rockTextureFilename);
+		WCHAR* rockTextureFilename, WCHAR* snowTextureFilename);
 	void Shutdown();
 	void Render(ID3D11DeviceContext*);
 	bool GenerateHeightMap(ID3D11Device* device, bool keydown);
@@ -67,10 +67,12 @@ public:
 	ID3D11ShaderResourceView* GetGrassTexture();
 	ID3D11ShaderResourceView* GetSlopeTexture();
 	ID3D11ShaderResourceView* GetRockTexture();
+	ID3D11ShaderResourceView* GetSnowTexture();
 
 	TextureClass* grassTexture;
 	TextureClass* slopeTexture;
 	TextureClass* rockTexture;
+	TextureClass* snowTexture;
 
 	int p[512];
 	int permutation[256] = { 151,160,137,91,90,15,
@@ -96,7 +98,7 @@ private:
 
 	void CalculateTextureCoordinates();
 
-	bool LoadTextures(ID3D11Device*, WCHAR*, WCHAR*, WCHAR*);
+	bool LoadTextures(ID3D11Device*, WCHAR*, WCHAR*, WCHAR*, WCHAR*);
 	void ReleaseTextures();
 
 	bool InitializeBuffers(ID3D11Device*);
