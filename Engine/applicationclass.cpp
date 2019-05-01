@@ -269,13 +269,6 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(1.0f, -1.0f, 0.0f);
 
-	//Initialize GUI
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.WantCaptureMouse = true;
-	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX11_Init(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext());
-
 	LSystemString = m_LSystem->generateString("FA", 5);
 
 	return true;
@@ -466,46 +459,72 @@ bool ApplicationClass::HandleInput(float frameTime)
 	m_Position->SetFrameTime(frameTime);
 
 	// Handle the input.
+
+	//Generate trees
 	keyDown = m_Input->IsSpacePressed();
 	if (keyDown)
 	{
 		ParseLSystem(0, 0, 0);
 	}
-	//m_Terrain->GenerateHeightMap(m_Direct3D->GetDevice(), keyDown);
 
+	//Apply noise
+	keyDown = m_Input->IsNPressed();
+	m_Terrain->GenerateHeightMap(m_Direct3D->GetDevice(), keyDown);
+	
+	//Smooth terrain
 	keyDown = m_Input->IsMPressed();
 	m_Terrain->SmoothTerrain(m_Direct3D->GetDevice(), keyDown);
 
+	//Fault terrain
 	keyDown = m_Input->IsFPressed();
-	m_Terrain->Faulting(m_Direct3D->GetDevice(), keyDown, faultValue);
+	m_Terrain->Faulting(m_Direct3D->GetDevice(), keyDown, (float(rand() % 2) + 0.5));
 
+	//Reset system
+	keyDown = m_Input->IsRPressed();
+	m_Terrain->FlattenTerrain(m_Direct3D->GetDevice(), keyDown);
+	if (keyDown)
+	{
+		m_Cylinders.clear();
+		m_Leaves.clear();
+	}
+
+	//Turn camera left
 	keyDown = m_Input->IsLeftPressed();
 	m_Position->TurnLeft(keyDown);
 
+	//Turn camera right
 	keyDown = m_Input->IsRightPressed();
 	m_Position->TurnRight(keyDown);
 
+	//Move camera forward
 	keyDown = m_Input->IsWPressed();
 	m_Position->MoveForward(keyDown);
 
+	//Move camera back
 	keyDown = m_Input->IsSPressed();
 	m_Position->MoveBackward(keyDown);
 
+	//Move camera left
 	keyDown = m_Input->IsAPressed();
 	m_Position->MoveLeft(keyDown);
 
+	//Move camera right
 	keyDown = m_Input->IsDPressed();
 	m_Position->MoveRight(keyDown);
 
+	//Move camera up
 	keyDown = m_Input->IsEPressed();
 	m_Position->MoveUpward(keyDown);
 
+	//Move camera down
 	keyDown = m_Input->IsQPressed();
 	m_Position->MoveDownward(keyDown);
 
+	//Turn camera up
 	keyDown = m_Input->IsUpPressed();
 	m_Position->LookUpward(keyDown);
 
+	//turn camera down
 	keyDown = m_Input->IsDownPressed();
 	m_Position->LookDownward(keyDown);
 
@@ -621,10 +640,12 @@ bool ApplicationClass::RenderGraphics()
 
 void ApplicationClass::ParseLSystem(float xpos, float ypos, float zpos)
 {
+	//Set coordinates for tree to be generated at
 	xpos = (rand() % 128) + 1;
 	zpos = (rand() % 128) + 1;
 	ypos = m_Terrain->getXZHeight(xpos, zpos);
 
+	//Initialise matrices
 	D3DXMATRIX transformMatrix;
 	m_Direct3D->GetWorldMatrix(transformMatrix);
 	D3DXMatrixTranslation(&transformMatrix, xpos, ypos, zpos);
@@ -749,17 +770,4 @@ void ApplicationClass::ParseLSystem(float xpos, float ypos, float zpos)
 		}
 
 	}
-}
-
-void ApplicationClass::gui()
-{
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-
-	ImGui::SliderInt("Fault Value: ", &faultValue, 1, 5, 0);
-
-	// Render dear imgui into screen
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

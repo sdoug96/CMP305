@@ -43,6 +43,8 @@ public:
 	bool IsSpacePressed();
 	bool IsMPressed();
 	bool IsFPressed();
+	bool IsNPressed();
+	bool IsRPressed();
 	bool IsEscapePressed();
 	bool IsLeftPressed();
 	bool IsRightPressed();

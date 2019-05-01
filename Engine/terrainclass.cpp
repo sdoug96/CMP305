@@ -164,6 +164,53 @@ void TerrainClass::Render(ID3D11DeviceContext* deviceContext)
 	return;
 }
 
+bool TerrainClass::FlattenTerrain(ID3D11Device * device, bool keydown)
+{
+	bool result;
+	//the toggle is just a bool that I use to make sure this is only called ONCE when you press a key
+	//until you release the key and start again. We dont want to be generating the terrain 500
+	//times per second. 
+	if (keydown && (!m_terrainGeneratedToggle))
+	{
+		int index;
+
+		//loop through the terrain and set the heights how we want. This is where we generate the terrain
+		for (int j = 0; j < m_terrainHeight; j++)
+		{
+			for (int i = 0; i < m_terrainWidth; i++)
+			{
+				index = (m_terrainHeight * j) + i;
+
+				m_heightMap[index].x = (float)i;
+				//Sets height to 0 to reset the terrain
+				m_heightMap[index].y = (float)(0.0f);
+				m_heightMap[index].z = (float)j;
+			}
+		}
+
+
+		result = CalculateNormals();
+		if (!result)
+		{
+			return false;
+		}
+
+		// Initialize the vertex and index buffer that hold the geometry for the terrain.
+		result = InitializeBuffers(device);
+		if (!result)
+		{
+			return false;
+		}
+
+		m_terrainGeneratedToggle = true;
+	}
+	else
+	{
+		m_terrainGeneratedToggle = false;
+	}
+	return true;
+}
+
 
 int TerrainClass::GetIndexCount()
 {
@@ -199,12 +246,10 @@ bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
 	if (keydown && (!m_terrainGeneratedToggle))
 	{
 		int index;
-		float height = 0.0;
+		float amplitude = ((rand() % 20) + 1);
 		float frequency = 0.1234151534;
 
 		//loop through the terrain and set the heights how we want. This is where we generate the terrain
-		//in this case I will run a sin-wave through the terrain in one axis.
-
 		for (int j = 0; j < m_terrainHeight; j++)
 		{
 			for (int i = 0; i < m_terrainWidth; i++)
@@ -212,16 +257,12 @@ bool TerrainClass::GenerateHeightMap(ID3D11Device* device, bool keydown)
 				index = (m_terrainHeight * j) + i;
 
 				m_heightMap[index].x = (float)i;
-				//magic numbers ahoy, sine wave in both directions applied to plane
-				m_heightMap[index].y = (float)(PerlinNoise(i * frequency, 0.0, j * frequency));
+				//Sets height to 0 to reset the terrain
+				m_heightMap[index].y = ((float)(PerlinNoise(i * frequency, 0.0, j * frequency))) * amplitude;
 				m_heightMap[index].z = (float)j;
-
-				//m_heightMap[index].x = (float)i;
-				////magic numbers ahoy, sine wave in both directions applied to plane
-				//m_heightMap[index].y = (float)(((sin((float)i / (m_terrainWidth / 12))*3.0) + rand() % 2) + ((sin((float)j / (m_terrainWidth / 12))*3.0)) + rand() % 2);
-				//m_heightMap[index].z = (float)j;
 			}
 		}
+
 
 		result = CalculateNormals();
 		if (!result)
@@ -365,6 +406,7 @@ void TerrainClass::Faulting(ID3D11Device* device, bool keydown, int faultValue)
 
 	float randPointX = rand() % 100, randPointY = rand() % 100, ranGradX = rand() % 2 - 0.5, randGradY = rand() % 2 - 0.5;
 
+	//Random fault line
 	lineA = D3DXVECTOR3(ranGradX, randGradY, 0.0);
 
 	if (keydown)
@@ -375,10 +417,13 @@ void TerrainClass::Faulting(ID3D11Device* device, bool keydown, int faultValue)
 			{
 				index = (m_terrainHeight * y) + x;
 
+				//Point being checked minus random point
 				lineB = D3DXVECTOR3(x - randPointX, y - randPointY, 0.0);
 
+				//Cross result of the two
 				D3DXVec3Cross(&crossResult, &lineA, &lineB);
 
+				//Raise and lower terrain depending on cross result
 				if (crossResult.z > 0)
 				{
 					m_heightMap[index].y += faultValue;
@@ -392,6 +437,7 @@ void TerrainClass::Faulting(ID3D11Device* device, bool keydown, int faultValue)
 	}
 }
 
+//Following 4 functions are implemented from improved Perlin Noise site
 float TerrainClass::Fade(float t)
 {
 	return t * t * t * (t * (t * 6 - 15) + 10);

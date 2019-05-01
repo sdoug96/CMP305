@@ -35,18 +35,6 @@ const float SCREEN_NEAR = 0.1f;
 #include "LSystemStringGenerator.h"
 #include <vector>
 
-//GUI INCLUDES
-
-#include <imgui.h>
-#include <imgui_impl_dx11.h>
-#include <imconfig.h>
-#include <imgui_impl_win32.h>
-#include <imgui_internal.h>
-#include <stb_rect_pack.h>
-#include <stb_textedit.h>
-#include <stb_truetype.h>
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ApplicationClass
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,8 +51,6 @@ public:
 	void Shutdown();
 	bool Frame();
 
-	void gui();
-	int faultValue = 2;
 	string LSystemString;
 
 private:

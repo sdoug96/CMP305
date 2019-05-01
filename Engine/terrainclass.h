@@ -55,6 +55,7 @@ public:
 		WCHAR* rockTextureFilename, WCHAR* snowTextureFilename);
 	void Shutdown();
 	void Render(ID3D11DeviceContext*);
+	bool FlattenTerrain(ID3D11Device* device, bool keydown);
 	bool GenerateHeightMap(ID3D11Device* device, bool keydown);
 	float getXZHeight(float xpos, float zpos);
 	bool SmoothTerrain(ID3D11Device* device, bool keydown);
@@ -75,6 +76,7 @@ public:
 	TextureClass* rockTexture;
 	TextureClass* snowTexture;
 
+	//Taken from improved Perlin Noise site
 	int p[512];
 	int permutation[256] = { 151,160,137,91,90,15,
 		131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
